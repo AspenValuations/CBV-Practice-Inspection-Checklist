@@ -1,0 +1,19 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# env — only .env.example is safe to commit
+.env
+.env.local
+.env.*.local
+
+# Claude Code session / memory data
+.claude/
+
+# misc
+*.tsbuildinfo
+.DS_Store
