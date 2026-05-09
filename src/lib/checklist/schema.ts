@@ -4,6 +4,8 @@ import { sections } from "./data";
 const preparerSchema = z.object({
   name: z.string().min(1, "Required").max(200),
   completionDate: z.coerce.date(),
+  valuationDate: z.coerce.date(),
+  reviewerName: z.string().min(1, "Required").max(200),
   engagementName: z.string().min(1, "Required").max(200),
   recipientEmail: z.string().email("Invalid email").max(254),
 });

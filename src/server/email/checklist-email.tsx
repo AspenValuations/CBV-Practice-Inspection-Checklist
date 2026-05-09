@@ -18,14 +18,18 @@ interface NoAnswer {
 interface ChecklistEmailProps {
   engagementName: string;
   preparerName: string;
+  reviewerName: string;
   completionDate: string; // formatted yyyy-MM-dd
+  valuationDate: string;  // formatted yyyy-MM-dd
   noAnswers: NoAnswer[];
 }
 
 export function ChecklistEmail({
   engagementName,
   preparerName,
+  reviewerName,
   completionDate,
+  valuationDate,
   noAnswers,
 }: ChecklistEmailProps) {
   const hasNoAnswers = noAnswers.length > 0;
@@ -97,10 +101,16 @@ export function ChecklistEmail({
               <strong>Preparer:</strong> {preparerName}
             </Text>
             <Text style={{ margin: "2px 0", fontSize: "13px" }}>
+              <strong>Reviewer:</strong> {reviewerName}
+            </Text>
+            <Text style={{ margin: "2px 0", fontSize: "13px" }}>
               <strong>Engagement:</strong> {engagementName}
             </Text>
             <Text style={{ margin: "2px 0", fontSize: "13px" }}>
-              <strong>Date:</strong> {completionDate}
+              <strong>Completion Date:</strong> {completionDate}
+            </Text>
+            <Text style={{ margin: "2px 0", fontSize: "13px" }}>
+              <strong>Valuation Date:</strong> {valuationDate}
             </Text>
           </Section>
 

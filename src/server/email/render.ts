@@ -12,7 +12,9 @@ export interface NoAnswer {
 export interface RenderEmailArgs {
   engagementName: string;
   preparerName: string;
+  reviewerName: string;
   completionDate: string;
+  valuationDate: string;
   noAnswers: NoAnswer[];
 }
 

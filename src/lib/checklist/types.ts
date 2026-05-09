@@ -21,6 +21,8 @@ export interface AnswerEntry {
 export interface PrepareInfo {
   name: string;
   completionDate: Date;
+  valuationDate: Date;
+  reviewerName: string;
   engagementName: string;
   recipientEmail: string;
 }

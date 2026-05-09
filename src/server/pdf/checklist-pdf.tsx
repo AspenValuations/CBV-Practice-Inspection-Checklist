@@ -28,15 +28,25 @@ export function ChecklistPdf({ data }: Props) {
 
         {/* Preparer block */}
         <View style={styles.preparerBlock}>
-          <Text style={styles.preparerTitle}>Preparer Information</Text>
+          <Text style={styles.preparerTitle}>Basic Information</Text>
           <View style={styles.preparerRow}>
             <Text style={styles.preparerLabel}>Preparer&apos;s Name:</Text>
             <Text style={styles.preparerValue}>{data.preparer.name}</Text>
           </View>
           <View style={styles.preparerRow}>
+            <Text style={styles.preparerLabel}>Reviewer&apos;s Name:</Text>
+            <Text style={styles.preparerValue}>{data.preparer.reviewerName}</Text>
+          </View>
+          <View style={styles.preparerRow}>
             <Text style={styles.preparerLabel}>Completion Date:</Text>
             <Text style={styles.preparerValue}>
               {formatDate(data.preparer.completionDate)}
+            </Text>
+          </View>
+          <View style={styles.preparerRow}>
+            <Text style={styles.preparerLabel}>Valuation Date:</Text>
+            <Text style={styles.preparerValue}>
+              {formatDate(data.preparer.valuationDate)}
             </Text>
           </View>
           <View style={styles.preparerRow}>

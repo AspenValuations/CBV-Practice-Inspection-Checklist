@@ -28,6 +28,7 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
     preparer: {
       ...data.preparer,
       completionDate: data.preparer.completionDate,
+      valuationDate: data.preparer.valuationDate,
     },
     answers: data.answers as unknown as Submission["answers"],
   };
@@ -42,6 +43,7 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
   const engagementName = data.preparer.engagementName;
   const engagementSlug = slugifyEngagement(engagementName);
   const dateStr = formatDate(data.preparer.completionDate);
+  const valuationDateStr = formatDate(data.preparer.valuationDate);
   const pdfFilename = `cbv-checklist-${engagementSlug}-${dateStr}.pdf`;
   const subject = buildEmailSubject(engagementName);
 
@@ -63,7 +65,9 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
     emailContent = await renderChecklistEmail({
       engagementName,
       preparerName: data.preparer.name,
+      reviewerName: data.preparer.reviewerName,
       completionDate: dateStr,
+      valuationDate: valuationDateStr,
       noAnswers,
     });
   } catch (err) {

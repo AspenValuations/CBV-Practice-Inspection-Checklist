@@ -1,11 +1,32 @@
 "use client";
 
 import { useFormContext, Controller } from "react-hook-form";
+import { Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/date-picker";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { DEFAULT_RECIPIENT_EMAIL } from "@/lib/engagement";
 import type { SubmissionInput } from "@/lib/checklist/schema";
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="ml-1 inline-flex items-center text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+          aria-label="More information"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 text-sm text-slate-700" side="top" align="start">
+        {text}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function PreparerBlock() {
   const {
@@ -17,13 +38,14 @@ export function PreparerBlock() {
   return (
     <div className="rounded-lg border bg-slate-50 p-6 mb-8">
       <h2 className="text-base font-semibold text-slate-900 mb-4 uppercase tracking-wide">
-        Preparer Information
+        Basic Information
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Name */}
+        {/* Preparer's Name */}
         <div className="space-y-1">
-          <Label htmlFor="preparer-name">
-            Preparer&apos;s Name <span className="text-red-500">*</span>
+          <Label htmlFor="preparer-name" className="inline-flex items-center">
+            Preparer&apos;s Name <span className="text-red-500 ml-0.5">*</span>
+            <InfoTooltip text="Analyst who prepared the valuation file (i.e. Schedules and Report)." />
           </Label>
           <Input
             id="preparer-name"
@@ -37,7 +59,25 @@ export function PreparerBlock() {
           )}
         </div>
 
-        {/* Date */}
+        {/* Reviewer's Name */}
+        <div className="space-y-1">
+          <Label htmlFor="reviewer-name" className="inline-flex items-center">
+            Reviewer&apos;s Name <span className="text-red-500 ml-0.5">*</span>
+            <InfoTooltip text="Manager/partner who reviewed the valuation report before issuing." />
+          </Label>
+          <Input
+            id="reviewer-name"
+            placeholder="Full name"
+            {...register("preparer.reviewerName")}
+            aria-invalid={!!errors.preparer?.reviewerName}
+            className={errors.preparer?.reviewerName ? "border-red-500 focus-visible:ring-red-500" : ""}
+          />
+          {errors.preparer?.reviewerName && (
+            <p className="text-xs text-red-500">{errors.preparer.reviewerName.message}</p>
+          )}
+        </div>
+
+        {/* Checklist Completion Date */}
         <div className="space-y-1">
           <Label htmlFor="preparer-date">
             Checklist Completion Date <span className="text-red-500">*</span>
@@ -54,6 +94,27 @@ export function PreparerBlock() {
             )}
           />
           {errors.preparer?.completionDate && (
+            <p className="text-xs text-red-500">Please select a date</p>
+          )}
+        </div>
+
+        {/* Valuation Date */}
+        <div className="space-y-1">
+          <Label htmlFor="valuation-date">
+            Valuation Date <span className="text-red-500">*</span>
+          </Label>
+          <Controller
+            name="preparer.valuationDate"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                value={field.value instanceof Date ? field.value : undefined}
+                onChange={(date) => field.onChange(date)}
+                placeholder="Select date"
+              />
+            )}
+          />
+          {errors.preparer?.valuationDate && (
             <p className="text-xs text-red-500">Please select a date</p>
           )}
         </div>
