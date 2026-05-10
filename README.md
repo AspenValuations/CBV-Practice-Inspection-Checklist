@@ -17,7 +17,7 @@
 - **Tailwind CSS v4** + custom shadcn-compatible UI components
 - **react-hook-form** + **Zod**
 - **@react-pdf/renderer** — server-side PDF generation
-- **Resend** — transactional email with PDF attachment
+- **Nodemailer** (Gmail SMTP) — transactional email with PDF attachment
 - **Vercel** — deployment target (Hobby/Free tier)
 - **Basic Auth middleware** — gates all routes
 
@@ -47,26 +47,25 @@ Open [http://localhost:3000](http://localhost:3000) — browser will prompt for 
 
 | Variable | Required | Description |
 |---|---|---|
-| `RESEND_API_KEY` | Yes | From [resend.com](https://resend.com) dashboard |
-| `EMAIL_FROM` | Yes | Sender address (start with `onboarding@resend.dev`; switch after DNS verified) |
-| `BASIC_AUTH_USER` | Yes | Username for HTTP Basic Auth |
-| `BASIC_AUTH_PASS` | Yes | Password for HTTP Basic Auth |
-| `OPENAI_API_KEY` | No | Present but unused in v1 |
+| `SMTP_HOST` | No | SMTP host. Default `smtp.gmail.com`. |
+| `SMTP_PORT` | No | SMTP port. Default `465` (TLS). Use `587` for STARTTLS. |
+| `SMTP_USER` | Yes | Sender Gmail/Workspace address. |
+| `SMTP_PASS` | Yes | Gmail **App Password** (16 chars, no spaces). |
+| `EMAIL_FROM` | No | From header. Defaults to `SMTP_USER`. |
+| `SMTP_POOL` | No | `true` to enable connection pooling. **Leave false on Vercel.** |
+| `BASIC_AUTH_USER` | Yes | HTTP Basic Auth username. |
+| `BASIC_AUTH_PASS` | Yes | HTTP Basic Auth password. |
+| `OPENAI_API_KEY` | No | Present but unused in v1. |
 
-### Getting a Resend API key
+### Generating a Gmail App Password
 
-1. Sign up at [resend.com](https://resend.com) (free tier: 3,000 emails/month)
-2. Go to **API Keys** → **Create API Key**
-3. Paste into `RESEND_API_KEY` in `.env.local`
+1. Sign in to the Google account you want to send from. **2-Step Verification must be enabled** (Account → Security → 2-Step Verification).
+2. Go to https://myaccount.google.com/apppasswords.
+3. Name it "CBV Checklist" and click **Create**.
+4. Copy the 16-char password Google shows once. **Strip the spaces** before pasting into `SMTP_PASS`.
+5. If your Google account is a Workspace tenant and admins have disabled App Passwords, ask your admin to allow them, OR switch to OAuth2 (out of scope v1).
 
-### Email sender domain (DNS)
-
-Initially: set `EMAIL_FROM=onboarding@resend.dev` — this works immediately.
-
-To send from your own domain (e.g. `noreply@aspenval.com`):
-1. In Resend dashboard → **Domains** → Add domain
-2. Add the provided SPF + DKIM DNS records to your domain registrar
-3. Once verified, update `EMAIL_FROM=noreply@aspenval.com` in Vercel dashboard
+If Gmail later blocks the App Password (e.g. after suspicious-login alerts), regenerate a new one in the same screen and update `SMTP_PASS`.
 
 ## Deployment (Vercel)
 
@@ -75,7 +74,7 @@ To send from your own domain (e.g. `noreply@aspenval.com`):
 vercel link
 
 # Add production env vars in Vercel dashboard:
-# RESEND_API_KEY, EMAIL_FROM, BASIC_AUTH_USER, BASIC_AUTH_PASS
+# SMTP_USER, SMTP_PASS, EMAIL_FROM (optional), BASIC_AUTH_USER, BASIC_AUTH_PASS
 
 # Deploy
 vercel --prod
@@ -99,6 +98,6 @@ All 83 questions are encoded in [`src/lib/checklist/data.ts`](src/lib/checklist/
 
 ## Future / deferred
 
-- **Database persistence**: Vercel Postgres (Neon) + Vercel Blob for retained PDFs. Add in `src/server/submit-checklist.ts` alongside the Resend call.
+- **Database persistence**: Vercel Postgres (Neon) + Vercel Blob for retained PDFs. Add in `src/server/submit-checklist.ts` alongside the SMTP send call.
 - **AI assist**: `OPENAI_API_KEY` is available if note-phrasing suggestions are ever added.
 - **Email CC / allowlist**: add `EMAIL_ALLOWLIST` env var and validate recipient in Server Action if abuse concerns arise.

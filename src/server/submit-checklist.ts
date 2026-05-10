@@ -5,8 +5,7 @@ import { sections } from "@/lib/checklist/data";
 import { slugifyEngagement, formatDate } from "@/lib/engagement";
 import { renderChecklistPdf } from "./pdf/render";
 import { renderChecklistEmail, buildNoAnswersList, buildEmailSubject } from "./email/render";
-import { getResend } from "./resend-client";
-import { env } from "./env";
+import { sendChecklistEmail } from "./mailer";
 import { isDuplicate, hashPayload } from "./dedupe";
 import type { Submission } from "@/lib/checklist/types";
 
@@ -77,26 +76,27 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
 
   // 7. Send email
   try {
-    const resend = getResend();
-    const result = await resend.emails.send({
-      from: env.EMAIL_FROM,
+    await sendChecklistEmail({
       to: data.preparer.recipientEmail,
       subject,
       html: emailContent.html,
       text: emailContent.text,
-      attachments: [
-        {
-          filename: pdfFilename,
-          content: pdfBuffer,
-        },
-      ],
+      attachments: [{ filename: pdfFilename, content: pdfBuffer }],
     });
-    if (result.error) {
-      console.error("[submitChecklist] Resend error:", result.error);
-      return { ok: false, error: "Email delivery failed. Please retry." };
-    }
   } catch (err) {
-    console.error("[submitChecklist] Email send exception:", err);
+    const e = err as NodeJS.ErrnoException & {
+      code?: string;
+      command?: string;
+      responseCode?: number;
+      response?: string;
+    };
+    console.error("[submitChecklist] SMTP send failed:", {
+      code: e.code,
+      command: e.command,
+      responseCode: e.responseCode,
+      response: e.response,
+      message: e.message,
+    });
     return { ok: false, error: "Email delivery failed. Please retry." };
   }
 
