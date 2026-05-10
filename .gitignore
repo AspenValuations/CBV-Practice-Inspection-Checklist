@@ -17,3 +17,6 @@ out/
 # misc
 *.tsbuildinfo
 .DS_Store
+
+# Serena MCP server configuration
+.serena/
