@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 type ReportType = "" | "written" | "oral";
 
 const ORAL_SECTION_TITLE = "Oral Valuations Conclusions";
-const ORAL_QUESTION_IDS = ["q5", "q6", "q7", "q8"] as const;
 
 type FormState = "idle" | "validating" | "submitting" | "success" | "error";
 
@@ -193,7 +192,7 @@ export function ChecklistForm() {
               key={section.title}
               aria-labelledby={`section-${section.title.slice(0, 20).replace(/\s/g, "-")}`}
               className={cn("mb-8", isGreyedOut && "opacity-40 pointer-events-none select-none")}
-              aria-disabled={isGreyedOut || undefined}
+              inert={isGreyedOut || undefined}
             >
               <h2
                 id={`section-${section.title.slice(0, 20).replace(/\s/g, "-")}`}

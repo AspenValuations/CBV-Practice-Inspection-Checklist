@@ -26,7 +26,7 @@ function buildAllAnswers(): Record<string, AnswerEntry> {
 
 export function buildEmptyNoSubmission(): Submission {
   return {
-    preparer: { ...PREPARER, recipientEmail: PREPARER.recipientEmail },
+    preparer: { ...PREPARER },
     answers: buildAllAnswers(),
   };
 }
