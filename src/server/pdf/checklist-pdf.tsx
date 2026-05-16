@@ -1,3 +1,4 @@
+import React from "react";
 import { Document, Page, View, Text } from "@react-pdf/renderer";
 import { sections } from "@/lib/checklist/data";
 import { formatDate } from "@/lib/engagement";
