@@ -62,7 +62,7 @@ export function ChecklistPdf({ data }: Props) {
 
         {/* Questions */}
         {sections.map((section) => (
-          <View key={section.title} wrap={false}>
+          <View key={section.title}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             {section.questions.map((q) => {
               const entry = data.answers[q.id];
