@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
-import { sections } from "@/lib/checklist/data";
-import { formatDate } from "@/lib/engagement";
-import { buildNoAnswersList, renderChecklistEmail } from "@/server/email/render";
+import { renderChecklistEmail } from "@/server/email/render";
 import {
   buildSubmission,
   type FixtureName,
@@ -22,14 +20,11 @@ export default async function PreviewEmailPage({ searchParams }: PageProps) {
   const fixture: FixtureName = requested;
   const submission = buildSubmission(fixture);
 
-  const noAnswers = buildNoAnswersList(sections, submission.answers);
   const { html } = await renderChecklistEmail({
-    engagementName: submission.preparer.engagementName,
-    preparerName: submission.preparer.name,
-    reviewerName: submission.preparer.reviewerName,
-    completionDate: formatDate(submission.preparer.completionDate),
-    valuationDate: formatDate(submission.preparer.valuationDate),
-    noAnswers,
+    preparer: submission.preparer,
+    gates: submission.gates,
+    answers: submission.answers,
+    submittedAt: new Date(),
   });
 
   return (

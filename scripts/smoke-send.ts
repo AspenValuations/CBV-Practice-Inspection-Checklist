@@ -1,11 +1,4 @@
-import { sections } from "@/lib/checklist/data";
-import { slugifyEngagement, formatDate } from "@/lib/engagement";
-import {
-  buildEmailSubject,
-  buildNoAnswersList,
-  renderChecklistEmail,
-} from "@/server/email/render";
-import { renderChecklistPdf } from "@/server/pdf/render";
+import { renderChecklistEmail } from "@/server/email/render";
 import { sendChecklistEmail, verifyTransport } from "@/server/mailer";
 import { buildSubmission, type FixtureName } from "./fixtures/submissions";
 
@@ -43,31 +36,13 @@ async function main(): Promise<void> {
   console.log(`[smoke] building submission fixture: ${fixtureArg}`);
   const submission = buildSubmission(fixtureArg);
 
-  console.log("[smoke] rendering PDF ...");
-  let pdfBuffer: Buffer;
-  try {
-    pdfBuffer = await renderChecklistPdf(submission);
-    console.log(`[smoke] PDF built (${pdfBuffer.length} bytes)`);
-  } catch (err) {
-    console.error("[smoke] PDF render FAILED:", err);
-    process.exit(1);
-  }
-
   console.log("[smoke] rendering email body ...");
-  const noAnswers = buildNoAnswersList(sections, submission.answers);
-  const { html, text } = await renderChecklistEmail({
-    engagementName: submission.preparer.engagementName,
-    preparerName: submission.preparer.name,
-    reviewerName: submission.preparer.reviewerName,
-    completionDate: formatDate(submission.preparer.completionDate),
-    valuationDate: formatDate(submission.preparer.valuationDate),
-    noAnswers,
+  const { html, text, subject } = await renderChecklistEmail({
+    preparer: submission.preparer,
+    gates: submission.gates,
+    answers: submission.answers,
+    submittedAt: new Date(),
   });
-
-  const slug = slugifyEngagement(submission.preparer.engagementName);
-  const dateStr = formatDate(submission.preparer.completionDate);
-  const filename = `cbv-checklist-${slug}-${dateStr}.pdf`;
-  const subject = buildEmailSubject(submission.preparer.engagementName);
 
   console.log(`[smoke] sending to ${recipient} (subject: ${subject}) ...`);
   try {
@@ -76,7 +51,7 @@ async function main(): Promise<void> {
       subject,
       html,
       text,
-      attachments: [{ filename, content: pdfBuffer }],
+      attachments: [], // no PDF — email is the compliance record
     });
     console.log(`[smoke] sent. messageId=${messageId}`);
   } catch (err) {

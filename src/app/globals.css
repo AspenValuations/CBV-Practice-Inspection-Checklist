@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 @theme {
+  /* Aspen Valuations brand tokens */
+  --color-brand-teal: #05B4C9;       /* Primary — Blue Teal (Pantone 7466 C) */
+  --color-brand-teal-light: #e6f8fb; /* Teal tint for backgrounds */
+  --color-brand-green: #1A322F;      /* Secondary — Dark Green (Pantone 7500 U) */
+  --color-brand-green-light: #2a4a46;/* Dark Green hover */
+  --color-brand-dark-bg: #3a3a3a;   /* Near-black backgrounds */
+
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);
   --color-card: hsl(0 0% 100%);

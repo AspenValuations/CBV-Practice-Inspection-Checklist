@@ -1,21 +1,32 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useState, useMemo } from "react";
+import { useForm, FormProvider, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { sections } from "@/lib/checklist/data";
-import { submissionSchema, getMissingQuestionIds } from "@/lib/checklist/schema";
+import { submissionSchema } from "@/lib/checklist/schema";
 import type { SubmissionInput } from "@/lib/checklist/schema";
 import { DEFAULT_RECIPIENT_EMAIL } from "@/lib/engagement";
+import { computeInactiveSet } from "@/lib/checklist/gates";
 import { submitChecklist } from "@/server/submit-checklist";
 import { PreparerBlock } from "./preparer-block";
-import { QuestionRow } from "./question-row";
-import { MissingBanner } from "./missing-banner";
+import { QuestionRow } from "./question-row/index";
+import { EngagementProfile } from "./engagement-profile";
+import { Sidebar } from "./sidebar";
+import { ReviewModal } from "./review-modal";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import type { Gates } from "@/lib/checklist/types";
 
-type FormState = "idle" | "validating" | "submitting" | "success" | "error";
+// PS group IDs: the first section in each group gets the group anchor ID
+const PS_GROUP_ANCHORS: Record<number, string> = {
+  0: "ps-100",
+  3: "ps-110",
+  10: "ps-120",
+  11: "ps-130",
+};
 
 function buildDefaultValues(): SubmissionInput {
   const answers: Record<string, { value: string; note: string }> = {};
@@ -33,71 +44,52 @@ function buildDefaultValues(): SubmissionInput {
       engagementName: "",
       recipientEmail: DEFAULT_RECIPIENT_EMAIL,
     },
+    gates: {
+      g1Oral: null,
+      g2Standards: null,
+      g3ConclusionType: null,
+      g4ScopeLimitations: null,
+      g5EngagementLetter: null,
+      g6RepLetter: null,
+    },
     answers: answers as SubmissionInput["answers"],
   };
 }
 
 export function ChecklistForm() {
-  const [formState, setFormState] = useState<FormState>("idle");
-  const [missingIds, setMissingIds] = useState<string[]>([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [successEngagement, setSuccessEngagement] = useState<string>("");
-  const bannerRef = useRef<HTMLDivElement>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   const methods = useForm<SubmissionInput>({
-    resolver: zodResolver(submissionSchema),
+    resolver: zodResolver(submissionSchema) as Resolver<SubmissionInput>,
     defaultValues: buildDefaultValues(),
     mode: "onSubmit",
   });
 
-  const { handleSubmit, getValues, formState: { isSubmitting } } = methods;
+  const { handleSubmit, control, formState: { isSubmitting } } = methods;
+  const gates = useWatch({ control, name: "gates" }) as Gates;
+  const inactive = useMemo(() => computeInactiveSet(gates ?? null), [gates]);
 
   async function onSubmit(data: SubmissionInput) {
-    setFormState("submitting");
-    setMissingIds([]);
     setErrorMessage("");
-
     try {
       const result = await submitChecklist(data);
       if (result.ok) {
-        setFormState("success");
+        setReviewOpen(false);
         setSuccessEngagement(data.preparer.engagementName);
+        setSubmitted(true);
+        toast.success(`Checklist sent to ${result.recipientEmail}`);
       } else {
-        setFormState("error");
         setErrorMessage(result.error);
       }
     } catch {
-      setFormState("error");
       setErrorMessage("An unexpected error occurred. Please try again.");
     }
   }
 
-  function onInvalid() {
-    // Collect missing answer IDs (questions with no answer selected)
-    const values = getValues();
-    const missing = getMissingQuestionIds(
-      values.answers as Partial<Record<string, { value?: string }>>,
-    );
-    setMissingIds(missing);
-
-    // Scroll to banner then to first missed question
-    setTimeout(() => {
-      bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (missing.length > 0) {
-        const firstNum = parseInt(missing[0]!.replace("q", ""), 10);
-        setTimeout(() => {
-          const el = document.getElementById(`q-${firstNum}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-            const firstRadio = el.querySelector<HTMLButtonElement>('button[role="radio"]');
-            firstRadio?.focus();
-          }
-        }, 300);
-      }
-    }, 100);
-  }
-
-  if (formState === "success") {
+  if (submitted) {
     return (
       <div className="rounded-lg border border-green-200 bg-green-50 p-8 text-center">
         <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 mb-4" />
@@ -110,8 +102,8 @@ export function ChecklistForm() {
           className="mt-6"
           variant="outline"
           onClick={() => {
-            setFormState("idle");
-            setMissingIds([]);
+            setSubmitted(false);
+            setSuccessEngagement("");
             setErrorMessage("");
             methods.reset(buildDefaultValues());
           }}
@@ -124,61 +116,77 @@ export function ChecklistForm() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
-        <div ref={bannerRef}>
-          {missingIds.length > 0 && <MissingBanner missingIds={missingIds} />}
-          {formState === "error" && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertTitle>Submission Failed</AlertTitle>
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>Submission Failed</AlertTitle>
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
 
-        <PreparerBlock />
+        <div className="lg:grid lg:grid-cols-[260px_1fr] lg:gap-8 lg:items-start">
+          {/* Sidebar */}
+          <Sidebar />
 
-        {sections.map((section) => (
-          <section
-            key={section.title}
-            aria-labelledby={`section-${section.title.slice(0, 20).replace(/\s/g, "-")}`}
-            className="mb-8"
-          >
-            <h2
-              id={`section-${section.title.slice(0, 20).replace(/\s/g, "-")}`}
-              className="text-sm font-bold text-white bg-[#1e3a5f] px-4 py-2 rounded-t-md mb-0 uppercase tracking-wide"
-            >
-              {section.title}
-            </h2>
-            <div className="space-y-3 mt-2">
-              {section.questions.map((q) => (
-                <QuestionRow
-                  key={q.id}
-                  question={q}
-                  isMissing={missingIds.includes(q.id)}
-                />
-              ))}
+          {/* Main content */}
+          <div>
+            <div id="engagement-details">
+              <PreparerBlock />
             </div>
-          </section>
-        ))}
 
-        {/* Submit button */}
-        <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 px-0 -mx-4 px-4 mt-8">
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full sm:w-auto bg-[#1e3a5f] hover:bg-[#1e3a5f]/90 text-white"
-            disabled={isSubmitting || formState === "submitting"}
-          >
-            {(isSubmitting || formState === "submitting") ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "COMPLETE"
-            )}
-          </Button>
+            <EngagementProfile />
+
+            {sections.map((section, idx) => {
+              const sectionId = `section-${section.title.slice(0, 20).replace(/\s/g, "-")}`;
+              const anchorId = PS_GROUP_ANCHORS[idx];
+              return (
+                <section
+                  key={section.title}
+                  aria-labelledby={sectionId}
+                  className="mb-8"
+                  {...(anchorId ? { id: anchorId } : {})}
+                >
+                  <h2
+                    id={sectionId}
+                    tabIndex={-1}
+                    className="text-sm font-bold text-white bg-[#1A322F] px-4 py-2 rounded-t-md mb-0 uppercase tracking-wide scroll-mt-16"
+                  >
+                    {section.title}
+                  </h2>
+                  <div className="space-y-3 mt-2">
+                    {section.questions.map((q) => (
+                      <QuestionRow
+                        key={q.id}
+                        question={q}
+                        isMissing={false}
+                        disabled={inactive.has(q.id)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+
+            {/* Review & Submit button */}
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 py-4 mt-8">
+              <Button
+                type="button"
+                size="lg"
+                className="w-full sm:w-auto bg-[#1A322F] hover:bg-[#1A322F]/90 text-white"
+                onClick={() => setReviewOpen(true)}
+              >
+                Review &amp; Submit
+              </Button>
+            </div>
+          </div>
         </div>
+
+        <ReviewModal
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          onConfirmSubmit={() => handleSubmit(onSubmit)()}
+          isSubmitting={isSubmitting}
+        />
       </form>
     </FormProvider>
   );

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { sections } from "@/lib/checklist/data";
 import type { Submission } from "@/lib/checklist/types";
+import { DEFAULT_GATES } from "@/lib/checklist/gates";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -38,6 +39,7 @@ function buildValidInput(overrides?: {
       completionDate: new Date("2026-05-10T00:00:00Z"),
       valuationDate: new Date("2026-04-30T00:00:00Z"),
     },
+    // gates intentionally omitted — Zod fills in DEFAULT_GATES (all null)
     answers,
   };
 }
@@ -74,13 +76,7 @@ describe("submitChecklist", () => {
     });
   });
 
-  it("happy path: renders PDF + email and sends, returns ok", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi
-        .fn()
-        .mockResolvedValue(Buffer.from("PDFDATA")),
-    }));
-
+  it("happy path: renders email and sends without PDF attachment, returns ok", async () => {
     const sendSpy = vi.fn().mockResolvedValue({ messageId: "<id@local>" });
     vi.doMock("../mailer", () => ({
       sendChecklistEmail: sendSpy,
@@ -91,30 +87,23 @@ describe("submitChecklist", () => {
       buildValidInput({ engagementName: `Happy ${Date.now()}` }),
     );
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toMatchObject({ ok: true });
     expect(sendSpy).toHaveBeenCalledTimes(1);
     const arg = sendSpy.mock.calls[0]?.[0] as {
       to: string;
       subject: string;
-      attachments: Array<{ filename: string; content: Buffer }>;
+      attachments: unknown[];
       html: string;
       text: string;
     };
     expect(arg.to).toBe("rcpt@example.com");
-    expect(arg.subject).toMatch(/^Completed CBV Practice Inspection Checklist - /);
-    expect(arg.attachments).toHaveLength(1);
-    expect(arg.attachments[0]?.filename).toMatch(
-      /^cbv-checklist-happy-\d+-2026-05-10\.pdf$/,
-    );
-    expect(arg.attachments[0]?.content).toBeInstanceOf(Buffer);
+    expect(arg.subject).toMatch(/CBV Practice Checklist/);
+    expect(arg.attachments).toHaveLength(0); // no PDF
     expect(arg.html.length).toBeGreaterThan(0);
     expect(arg.text.length).toBeGreaterThan(0);
   });
 
   it("dedupe: second identical submit silently succeeds without re-sending", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi.fn().mockResolvedValue(Buffer.from("PDFDATA")),
-    }));
     const sendSpy = vi.fn().mockResolvedValue({ messageId: "<id@local>" });
     vi.doMock("../mailer", () => ({ sendChecklistEmail: sendSpy }));
 
@@ -127,39 +116,12 @@ describe("submitChecklist", () => {
       buildValidInput({ engagementName: dedupeName }),
     );
 
-    expect(r1).toEqual({ ok: true });
-    expect(r2).toEqual({ ok: true });
+    expect(r1).toMatchObject({ ok: true });
+    expect(r2).toMatchObject({ ok: true });
     expect(sendSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("returns PDF error when renderChecklistPdf throws", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi.fn().mockRejectedValue(new Error("pdf boom")),
-    }));
-    const sendSpy = vi.fn();
-    vi.doMock("../mailer", () => ({ sendChecklistEmail: sendSpy }));
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    const { submitChecklist } = await import("../submit-checklist");
-    const result = await submitChecklist(
-      buildValidInput({ engagementName: `Pdf-fail ${Date.now()}` }),
-    );
-
-    expect(result).toEqual({
-      ok: false,
-      error: "Failed to generate PDF. Please try again.",
-    });
-    expect(sendSpy).not.toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[submitChecklist] PDF generation error:",
-      expect.any(Error),
-    );
-  });
-
   it("returns SMTP error and logs sanitised fields when sendChecklistEmail throws", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi.fn().mockResolvedValue(Buffer.from("PDFDATA")),
-    }));
     const smtpErr = Object.assign(new Error("Invalid login: 535-5.7.8"), {
       code: "EAUTH",
       command: "AUTH PLAIN",
@@ -190,16 +152,12 @@ describe("submitChecklist", () => {
         message: "Invalid login: 535-5.7.8",
       },
     );
-    // crucial: SMTP_PASS / auth / stack must NOT be logged
     const loggedArg = consoleSpy.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(loggedArg).not.toHaveProperty("stack");
     expect(JSON.stringify(loggedArg)).not.toContain("abcdabcdabcdabcd");
   });
 
   it("happy path: subject embeds the raw engagement name (not slug)", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi.fn().mockResolvedValue(Buffer.from("PDFDATA")),
-    }));
     const sendSpy = vi.fn().mockResolvedValue({ messageId: "<id@local>" });
     vi.doMock("../mailer", () => ({ sendChecklistEmail: sendSpy }));
 
@@ -208,17 +166,14 @@ describe("submitChecklist", () => {
     const result = await submitChecklist(
       buildValidInput({ engagementName: rawName }),
     );
-    expect(result).toEqual({ ok: true });
+    expect(result).toMatchObject({ ok: true });
     const arg = sendSpy.mock.calls[0]?.[0] as { subject: string };
-    expect(arg.subject).toBe(
-      `Completed CBV Practice Inspection Checklist - ${rawName}`,
-    );
+    // Subject contains raw engagement name (not slugified) and the new format
+    expect(arg.subject).toContain(rawName);
+    expect(arg.subject).toContain("CBV Practice Checklist");
   });
 
   it("happy path with one 'no' answer: email body lists it", async () => {
-    vi.doMock("../pdf/render", () => ({
-      renderChecklistPdf: vi.fn().mockResolvedValue(Buffer.from("PDFDATA")),
-    }));
     const sendSpy = vi.fn().mockResolvedValue({ messageId: "<id@local>" });
     vi.doMock("../mailer", () => ({ sendChecklistEmail: sendSpy }));
 
@@ -229,10 +184,12 @@ describe("submitChecklist", () => {
         noOnQuestionId: "q1",
       }),
     );
-    expect(result).toEqual({ ok: true });
-    const arg = sendSpy.mock.calls[0]?.[0] as { html: string; text: string };
-    expect(arg.html).toContain("Below are the questions");
-    expect(arg.text).toMatch(/Q1\./);
+    expect(result).toMatchObject({ ok: true });
+    const arg = sendSpy.mock.calls[0]?.[0] as { html: string; text: string; subject: string };
+    // Subject should flag 1 item
+    expect(arg.subject).toContain("1 item flagged");
+    // HTML should contain Q1 in flagged items
+    expect(arg.html).toContain("Q1");
   });
 });
 
@@ -248,6 +205,7 @@ describe("Submission type", () => {
         completionDate: new Date(),
         valuationDate: new Date(),
       },
+      gates: { ...DEFAULT_GATES },
       answers: Object.fromEntries(
         sections.flatMap((s) =>
           s.questions.map((q) => [

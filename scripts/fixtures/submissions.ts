@@ -1,5 +1,6 @@
 import { sections } from "@/lib/checklist/data";
 import type { AnswerEntry, Submission } from "@/lib/checklist/types";
+import { DEFAULT_GATES } from "@/lib/checklist/gates";
 
 const PREPARER = {
   name: "Smoke Test Preparer",
@@ -27,6 +28,7 @@ function buildAllAnswers(): Record<string, AnswerEntry> {
 export function buildEmptyNoSubmission(): Submission {
   return {
     preparer: { ...PREPARER },
+    gates: { ...DEFAULT_GATES },
     answers: buildAllAnswers(),
   };
 }
@@ -75,6 +77,7 @@ export function buildWithFiveNoSubmission(): Submission {
 
   return {
     preparer: { ...PREPARER },
+    gates: { ...DEFAULT_GATES },
     answers,
   };
 }

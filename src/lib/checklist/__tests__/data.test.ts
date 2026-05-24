@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { sections } from "../data";
 import { slugifyEngagement } from "../../engagement";
+import { partsToString } from "../bolding";
 
 const allQuestions = sections.flatMap((s) => s.questions);
 
@@ -30,6 +31,22 @@ describe("checklist data", () => {
     const q1 = allQuestions.find((q) => q.id === "q1");
     expect(q1).toBeDefined();
     expect(q1?.allowsNA).toBe(false);
+  });
+
+  it("every question has a non-empty parts array", () => {
+    for (const q of allQuestions) {
+      expect(q.parts.length, `Q${q.number} (${q.id}) has empty parts`).toBeGreaterThan(0);
+      const text = partsToString(q.parts);
+      expect(text.trim().length, `Q${q.number} (${q.id}) parts produce empty text`).toBeGreaterThan(0);
+    }
+  });
+
+  it("bold parts have truthy bold flag", () => {
+    const boldParts = allQuestions.flatMap((q) =>
+      q.parts.filter((p) => p.bold === true),
+    );
+    // At minimum Q1–Q8 + Q12–Q13 + Q17–Q18 + Q46–Q47 + Q70–Q71 are curated
+    expect(boldParts.length).toBeGreaterThanOrEqual(16);
   });
 });
 

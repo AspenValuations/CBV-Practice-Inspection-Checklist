@@ -2,46 +2,86 @@
 
 **Aspen Valuations** — Internal tool for completing the CBV Practice Inspection Checklist per Valuation Practice Standards 100/110/120/130.
 
-## What it does
+**v2 changes:** Engagement Profile gate logic (6 gates that grey out non-applicable questions), redesigned branded HTML email (no PDF), run-compacted Q&A log, review modal with pre-submit validation.
 
-1. Preparer fills in their name, completion date, engagement name, and recipient email.
-2. Answers 83 Yes/No/N/A questions (sections PS100 → PS130; IVS section excluded per firm policy).
-3. Clicks **COMPLETE** — the app validates all answers, generates a PDF, and emails it to the recipient.
-   - If questions are missing: highlights them with a jump-to-question banner.
-   - If all complete: sends email with PDF attached. Body lists any "No" answers for follow-up.
+---
+
+## How to use this tool
+
+1. **Engagement Details** — Enter the preparer name, reviewer name, engagement name, completion date, valuation date, and the recipient email address where the completed checklist will be sent.
+
+2. **Engagement Profile** — Answer the 6 gate questions:
+   - G1: Is this an oral valuation conclusion?
+   - G2: Which standards apply (CBV or IVS)?
+   - G3: What type of conclusion (Comprehensive / Estimate / Calculation / IVS Standard)?
+   - G4: Are there scope limitations?
+   - G5: Was a signed engagement letter obtained?
+   - G6: Was a representation letter obtained?
+
+   Gates immediately grey out questions that are not applicable to your engagement.
+
+3. **PS Sections (100–130)** — Work through each question with Yes / No / N/A buttons. Any "No" answer is flagged and highlighted in red. Add an optional note to explain the deviation.
+
+4. **Review & Submit** — Once all active questions are answered, the "Review & Submit" button opens a modal showing the submission summary: scorecard (Yes / No / N/A / Excluded counts), flagged items list, and preparer/reviewer signatures. The button is disabled until every active question has an answer.
+
+5. **Email** — After confirming in the modal, the server sends a branded HTML email to the recipient address. The email contains:
+   - **Part 1:** Engagement details, scorecard, status banner, and flagged item list.
+   - **Part 2:** Full Q&A log — compacted "run" lines for consecutive same-answer questions, full No rows with notes, and greyed exclusion blocks for inactive questions with the gate reason.
+
+   Per PS 130, save each email to the engagement file as the 5-year compliance record. No PDF is generated.
+
+---
 
 ## Stack
 
 - **Next.js 15** App Router + Server Actions (Node runtime)
-- **TypeScript** (strict)
-- **Tailwind CSS v4** + custom shadcn-compatible UI components
-- **react-hook-form** + **Zod**
-- **@react-pdf/renderer** — server-side PDF generation
-- **Nodemailer** (Gmail SMTP) — transactional email with PDF attachment
-- **Vercel** — deployment target (Hobby/Free tier)
-- **Basic Auth middleware** — gates all routes
+- **TypeScript** (strict, `noUncheckedIndexedAccess`)
+- **Tailwind CSS v4** + Radix UI primitives
+- **react-hook-form** + **Zod** — form state, validation, gate-aware schema
+- **react-email** (`@react-email/render`) — branded HTML email, no PDF
+- **Nodemailer** (Gmail SMTP) — transactional email
+- **Vitest** — unit tests
+- **Vercel** — deployment target
+
+---
 
 ## Local development
 
 ### Prerequisites
+
 - Node.js ≥ 20
 - pnpm ≥ 10
 
 ### Setup
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Copy env template and fill in values
 cp .env.example .env.local
-# Edit .env.local — see Environment Variables below
-
-# Start dev server
+# Edit .env.local with your SMTP credentials
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — browser will prompt for Basic Auth credentials.
+Open [http://localhost:3000](http://localhost:3000).
+
+### Email preview (dev only)
+
+```bash
+# Visit the dev preview page to see the rendered email in an iframe:
+# http://localhost:3000/preview-email
+# http://localhost:3000/preview-email?case=empty
+# http://localhost:3000/preview-email?case=with-no
+```
+
+### Smoke send
+
+```bash
+# Send a real email via SMTP to verify end-to-end delivery:
+pnpm tsx scripts/smoke-send.ts your@email.com
+pnpm tsx scripts/smoke-send.ts your@email.com empty    # 0 flags
+pnpm tsx scripts/smoke-send.ts your@email.com with-no  # 5 flags
+```
+
+---
 
 ## Environment variables
 
@@ -52,35 +92,48 @@ Open [http://localhost:3000](http://localhost:3000) — browser will prompt for 
 | `SMTP_USER` | Yes | Sender Gmail/Workspace address. |
 | `SMTP_PASS` | Yes | Gmail **App Password** (16 chars, no spaces). |
 | `EMAIL_FROM` | No | From header. Defaults to `SMTP_USER`. |
-| `SMTP_POOL` | No | `true` to enable connection pooling. **Leave false on Vercel.** |
-| `BASIC_AUTH_USER` | Yes | HTTP Basic Auth username. |
-| `BASIC_AUTH_PASS` | Yes | HTTP Basic Auth password. |
-| `OPENAI_API_KEY` | No | Present but unused in v1. |
+| `SMTP_POOL` | No | `true` to enable connection pooling. Leave `false` on Vercel. |
 
 ### Generating a Gmail App Password
 
-1. Sign in to the Google account you want to send from. **2-Step Verification must be enabled** (Account → Security → 2-Step Verification).
-2. Go to https://myaccount.google.com/apppasswords.
+1. Sign in to the Google account you want to send from. **2-Step Verification must be enabled.**
+2. Go to [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
 3. Name it "CBV Checklist" and click **Create**.
-4. Copy the 16-char password Google shows once. **Strip the spaces** before pasting into `SMTP_PASS`.
-5. If your Google account is a Workspace tenant and admins have disabled App Passwords, ask your admin to allow them, OR switch to OAuth2 (out of scope v1).
+4. Copy the 16-char password. **Strip the spaces** before pasting into `SMTP_PASS`.
 
-If Gmail later blocks the App Password (e.g. after suspicious-login alerts), regenerate a new one in the same screen and update `SMTP_PASS`.
+---
 
-## Deployment (Vercel)
+## Architecture
 
-```bash
-# Link to Vercel project (one time)
-vercel link
+### Gate logic
 
-# Add production env vars in Vercel dashboard:
-# SMTP_USER, SMTP_PASS, EMAIL_FROM (optional), BASIC_AUTH_USER, BASIC_AUTH_PASS
+Six gate questions (`g1Oral` through `g6RepLetter`) feed `computeInactiveSet(gates)` which returns a `Set<string>` of greyed question IDs. All downstream logic (form validation, scorecard tally, email Q&A log, exclusion blocks) receives this set and skips inactive questions consistently.
 
-# Deploy
-vercel --prod
+Gate rules are declared in [`src/lib/checklist/gates.ts`](src/lib/checklist/gates.ts).
+
+### Email pipeline
+
+```
+Server Action (submitChecklist)
+  → renderChecklistEmail()
+      → computeInactiveSet()  → tallyAll()  → buildFlaggedItems()  → buildBlocks()
+      → ChecklistEmail (react-email JSX)
+      → render() → html + plainText
+  → sendChecklistEmail() (Nodemailer)
 ```
 
-Auth on Vercel Hobby: the `src/middleware.ts` basic-auth middleware runs on every request. Set `BASIC_AUTH_USER` and `BASIC_AUTH_PASS` in the Vercel project environment variables — the app **blocks all traffic** until both are set.
+`buildBlocks()` produces `SectionBlocks[]` with three block types:
+- **`run`** — compacted consecutive same-label (Yes or N/A) questions
+- **`no`** — a full No row with question text, answer badge, and note
+- **`exclusion`** — a grey box naming excluded question numbers and the gate reason
+
+### Data model
+
+All 83 questions are in [`src/lib/checklist/data.ts`](src/lib/checklist/data.ts). IDs are intentionally gappy (`q9/q10/q11` absent — IVS section excluded per firm policy) so question numbers match the source PDF.
+
+Question text uses `parts: QPart[]` (array of `{ text, bold? }` segments) for keyword bolding.
+
+---
 
 ## Scripts
 
@@ -92,12 +145,21 @@ pnpm lint         # ESLint
 pnpm test         # Vitest unit tests
 ```
 
-## Data model
+---
 
-All 83 questions are encoded in [`src/lib/checklist/data.ts`](src/lib/checklist/data.ts). Question IDs are intentionally gappy (`q9`/`q10`/`q11` absent — IVS section excluded) so question numbers match the source PDF verbatim.
+## Deployment (Vercel)
 
-## Future / deferred
+```bash
+vercel link        # one-time project link
+vercel --prod      # deploy to production
+```
 
-- **Database persistence**: Vercel Postgres (Neon) + Vercel Blob for retained PDFs. Add in `src/server/submit-checklist.ts` alongside the SMTP send call.
-- **AI assist**: `OPENAI_API_KEY` is available if note-phrasing suggestions are ever added.
-- **Email CC / allowlist**: add `EMAIL_ALLOWLIST` env var and validate recipient in Server Action if abuse concerns arise.
+Set these env vars in the Vercel dashboard: `SMTP_USER`, `SMTP_PASS`, and optionally `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`.
+
+The `/preview-email` dev route returns 404 in production automatically.
+
+---
+
+## Retention
+
+Per PS 130, each submitted checklist email serves as the compliance record. Save the email to the client engagement file. Recommended retention: 5 years.
