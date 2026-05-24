@@ -14,6 +14,9 @@ out/
 # Claude Code session / memory data
 .claude/
 
+# planning docs
+plans/
+
 # misc
 *.tsbuildinfo
 .DS_Store
