@@ -5,6 +5,7 @@ import { useForm, FormProvider, useWatch, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { sections } from "@/lib/checklist/data";
+import { DEFAULT_ANSWERS } from "@/lib/checklist/defaults";
 import { submissionSchema } from "@/lib/checklist/schema";
 import type { SubmissionInput } from "@/lib/checklist/schema";
 import { DEFAULT_RECIPIENT_EMAIL } from "@/lib/engagement";
@@ -32,7 +33,8 @@ function buildDefaultValues(): SubmissionInput {
   const answers: Record<string, { value: string; note: string }> = {};
   for (const section of sections) {
     for (const q of section.questions) {
-      answers[q.id] = { value: "", note: "" };
+      const d = DEFAULT_ANSWERS[q.id];
+      answers[q.id] = { value: d?.value ?? "", note: d?.note ?? "" };
     }
   }
   return {
