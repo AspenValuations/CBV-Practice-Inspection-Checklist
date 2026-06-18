@@ -60,6 +60,7 @@ function buildDefaultValues(): SubmissionInput {
 
 export function ChecklistForm() {
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [hasAttempted, setHasAttempted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [successEngagement, setSuccessEngagement] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
@@ -72,6 +73,7 @@ export function ChecklistForm() {
 
   const { handleSubmit, control, formState: { isSubmitting } } = methods;
   const gates = useWatch({ control, name: "gates" }) as Gates;
+  const answers = useWatch({ control, name: "answers" }) as Record<string, { value?: string } | undefined>;
   const inactive = useMemo(() => computeInactiveSet(gates ?? null), [gates]);
 
   async function onSubmit(data: SubmissionInput) {
@@ -160,7 +162,7 @@ export function ChecklistForm() {
                       <QuestionRow
                         key={q.id}
                         question={q}
-                        isMissing={false}
+                        isMissing={hasAttempted && !inactive.has(q.id) && !answers[q.id]?.value}
                         disabled={inactive.has(q.id)}
                       />
                     ))}
@@ -175,7 +177,7 @@ export function ChecklistForm() {
                 type="button"
                 size="lg"
                 className="w-full sm:w-auto bg-[#1A322F] hover:bg-[#1A322F]/90 text-white"
-                onClick={() => setReviewOpen(true)}
+                onClick={() => { setHasAttempted(true); setReviewOpen(true); }}
               >
                 Review &amp; Submit
               </Button>

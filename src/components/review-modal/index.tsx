@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { sections } from "@/lib/checklist/data";
 import { computeInactiveSet } from "@/lib/checklist/gates";
 import { tallyAll } from "@/lib/checklist/tally";
@@ -25,6 +25,7 @@ interface ReviewModalProps {
 
 export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting }: ReviewModalProps) {
   const { getValues } = useFormContext<SubmissionInput>();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const { tally, flags, gates } = useMemo(() => {
     if (!open) return { tally: { yes: 0, no: 0, na: 0, unanswered: 0, totalActive: 0 }, flags: [], gates: null };
@@ -37,6 +38,37 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting 
   }, [open, getValues]);
 
   const canSubmit = tally.unanswered === 0;
+
+  async function handleDownloadPdf() {
+    setIsDownloading(true);
+    try {
+      const values = getValues();
+      const res = await fetch("/api/download-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error("PDF generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const slug = (values.preparer?.engagementName ?? "checklist")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 50) || "checklist";
+      a.download = `cbv-checklist-${slug}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently ignore; user can retry
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,8 +101,25 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting 
         <DialogFooter>
           <Button
             variant="outline"
+            onClick={handleDownloadPdf}
+            disabled={isDownloading || isSubmitting}
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDownloading}
           >
             Continue Editing
           </Button>
