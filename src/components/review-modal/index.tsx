@@ -98,45 +98,52 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting 
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-row items-center justify-between sm:flex-row">
+          {/* Left: Download PDF */}
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={handleDownloadPdf}
             disabled={isDownloading || isSubmitting}
+            className="text-slate-600"
           >
             {isDownloading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Generating…
               </>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="mr-1.5 h-3.5 w-3.5" />
                 Download PDF
               </>
             )}
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting || isDownloading}
-          >
-            Continue Editing
-          </Button>
-          <Button
-            className="bg-[#1A322F] hover:bg-[#1A322F]/90 text-white"
-            onClick={onConfirmSubmit}
-            disabled={!canSubmit || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              "Submit Checklist"
-            )}
-          </Button>
+
+          {/* Right: Continue Editing + Submit */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting || isDownloading}
+            >
+              Continue Editing
+            </Button>
+            <Button
+              className="bg-[#1A322F] hover:bg-[#1A322F]/90 text-white"
+              onClick={onConfirmSubmit}
+              disabled={!canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Checklist"
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
