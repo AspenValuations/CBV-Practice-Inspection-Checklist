@@ -21,9 +21,10 @@ interface ReviewModalProps {
   onOpenChange: (open: boolean) => void;
   onConfirmSubmit: () => void;
   isSubmitting: boolean;
+  submitError?: string;
 }
 
-export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting }: ReviewModalProps) {
+export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting, submitError }: ReviewModalProps) {
   const { getValues } = useFormContext<SubmissionInput>();
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -94,6 +95,12 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting 
             <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-4 py-3">
               {tally.unanswered} question{tally.unanswered === 1 ? "" : "s"} still unanswered.
               Please complete all questions before submitting.
+            </p>
+          )}
+
+          {submitError && (
+            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-4 py-3">
+              {submitError}
             </p>
           )}
         </div>

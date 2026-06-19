@@ -187,9 +187,10 @@ export function ChecklistForm() {
 
         <ReviewModal
           open={reviewOpen}
-          onOpenChange={setReviewOpen}
-          onConfirmSubmit={() => handleSubmit(onSubmit)()}
+          onOpenChange={(open) => { setReviewOpen(open); if (!open) setErrorMessage(""); }}
+          onConfirmSubmit={() => handleSubmit(onSubmit, () => setReviewOpen(false))()}
           isSubmitting={isSubmitting}
+          submitError={errorMessage}
         />
       </form>
     </FormProvider>
