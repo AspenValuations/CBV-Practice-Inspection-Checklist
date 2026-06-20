@@ -781,7 +781,7 @@ export const sections: ChecklistSection[] = [
       {
         id: "q84",
         number: 84,
-        allowsNA: false,
+        allowsNA: true,
         parts: [
           { text: "Documentation of any conclusions of specialists relied upon (including copy of written report if prepared)." },
         ],

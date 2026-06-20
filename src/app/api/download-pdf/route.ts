@@ -43,11 +43,13 @@ export async function POST(req: Request) {
       .replace(/^-|-$/g, "")
       .slice(0, 50) || "checklist";
 
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="cbv-checklist-${slug}.pdf"`,
+      "Content-Disposition": `attachment; filename="cbv-checklist-${slug}-${date}.pdf"`,
     },
   });
 }

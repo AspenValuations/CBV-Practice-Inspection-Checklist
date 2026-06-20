@@ -38,7 +38,7 @@ export function PreparerBlock() {
   return (
     <div className="rounded-lg border bg-slate-50 p-6 mb-8">
       <h2 className="text-base font-semibold text-slate-900 mb-4 uppercase tracking-wide">
-        Basic Information
+        Preparer of Report
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Preparer's Name */}

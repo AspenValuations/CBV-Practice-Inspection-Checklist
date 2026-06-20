@@ -59,7 +59,8 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting,
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
         .slice(0, 50) || "checklist";
-      a.download = `cbv-checklist-${slug}.pdf`;
+      const date = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+      a.download = `cbv-checklist-${slug}-${date}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
