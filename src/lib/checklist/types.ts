@@ -30,7 +30,7 @@ export interface PrepareInfo {
   valuationDate: Date;
   reviewerName: string;
   engagementName: string;
-  recipientEmail: string;
+  recipientEmails: string[];
 }
 
 export type ConclusionType =

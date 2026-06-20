@@ -35,7 +35,7 @@ function buildValidInput(overrides?: {
       name: "Alice",
       reviewerName: "Bob",
       engagementName: overrides?.engagementName ?? "Acme Corp",
-      recipientEmail: "rcpt@example.com",
+      recipientEmails: ["rcpt@example.com"],
       completionDate: new Date("2026-05-10T00:00:00Z"),
       valuationDate: new Date("2026-04-30T00:00:00Z"),
     },
@@ -66,8 +66,8 @@ describe("submitChecklist", () => {
   });
 
   it("returns validation error for invalid recipient email", async () => {
-    const input = buildValidInput() as { preparer: { recipientEmail: string } };
-    input.preparer.recipientEmail = "not-an-email";
+    const input = buildValidInput() as { preparer: { recipientEmails: string[] } };
+    input.preparer.recipientEmails = ["not-an-email"];
     const { submitChecklist } = await import("../submit-checklist");
     const result = await submitChecklist(input);
     expect(result).toEqual({
@@ -96,7 +96,7 @@ describe("submitChecklist", () => {
       html: string;
       text: string;
     };
-    expect(arg.to).toBe("rcpt@example.com");
+    expect(arg.to).toEqual(["rcpt@example.com"]);
     expect(arg.subject).toMatch(/CBV Practice Checklist/);
     expect(arg.attachments).toHaveLength(0); // no PDF
     expect(arg.html.length).toBeGreaterThan(0);
@@ -201,7 +201,7 @@ describe("Submission type", () => {
         name: "x",
         reviewerName: "y",
         engagementName: "z",
-        recipientEmail: "a@b.c",
+        recipientEmails: ["a@b.c"],
         completionDate: new Date(),
         valuationDate: new Date(),
       },

@@ -22,7 +22,7 @@ const basePreparer = {
   name: "Alice",
   reviewerName: "Bob",
   engagementName: "Acme Corp",
-  recipientEmail: "test@example.com",
+  recipientEmails: ["test@example.com"],
   completionDate: new Date("2026-05-10"),
   valuationDate: new Date("2026-04-30"),
 };
@@ -106,7 +106,7 @@ describe("submissionSchema", () => {
 
   it("rejects malformed email", () => {
     const result = submissionSchema.safeParse({
-      preparer: { ...basePreparer, recipientEmail: "bad" },
+      preparer: { ...basePreparer, recipientEmails: ["bad"] },
       answers: buildAllAnswers(),
     });
     expect(result.success).toBe(false);

@@ -6,7 +6,7 @@ const PREPARER = {
   name: "Smoke Test Preparer",
   reviewerName: "Smoke Test Reviewer",
   engagementName: "Smoke Test Engagement",
-  recipientEmail: "smoke@example.com",
+  recipientEmails: ["smoke@example.com"],
   completionDate: new Date("2026-05-10T00:00:00Z"),
   valuationDate: new Date("2026-04-30T00:00:00Z"),
 };

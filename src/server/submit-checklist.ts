@@ -6,7 +6,7 @@ import { sendChecklistEmail } from "./mailer";
 import { isDuplicate, hashPayload } from "./dedupe";
 import type { Gates } from "@/lib/checklist/types";
 
-export type SubmitResult = { ok: true; recipientEmail: string } | { ok: false; error: string };
+export type SubmitResult = { ok: true; recipientEmails: string[] } | { ok: false; error: string };
 
 export async function submitChecklist(input: unknown): Promise<SubmitResult> {
   // 1. Validate
@@ -20,7 +20,7 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
   // 2. Dedupe check
   const payloadHash = hashPayload(data);
   if (isDuplicate(payloadHash)) {
-    return { ok: true, recipientEmail: data.preparer.recipientEmail }; // silently succeed
+    return { ok: true, recipientEmails: data.preparer.recipientEmails }; // silently succeed
   }
 
   // 3. Render email (builds tally, flags, subject server-side)
@@ -40,7 +40,7 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
   // 4. Send email (no PDF attachment — email is the compliance record per PS 130)
   try {
     await sendChecklistEmail({
-      to: data.preparer.recipientEmail,
+      to: data.preparer.recipientEmails,
       subject: emailContent.subject,
       html: emailContent.html,
       text: emailContent.text,
@@ -63,5 +63,5 @@ export async function submitChecklist(input: unknown): Promise<SubmitResult> {
     return { ok: false, error: "Email delivery failed. Please retry." };
   }
 
-  return { ok: true, recipientEmail: data.preparer.recipientEmail };
+  return { ok: true, recipientEmails: data.preparer.recipientEmails };
 }

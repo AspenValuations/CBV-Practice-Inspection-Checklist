@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext, Controller } from "react-hook-form";
-import { Info } from "lucide-react";
+import { Info, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/date-picker";
@@ -32,8 +32,20 @@ export function PreparerBlock() {
   const {
     register,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useFormContext<SubmissionInput>();
+
+  const recipientEmails = (watch("preparer.recipientEmails") ?? [DEFAULT_RECIPIENT_EMAIL]) as string[];
+
+  const addEmail = () =>
+    setValue("preparer.recipientEmails", [...recipientEmails, ""], { shouldValidate: false });
+
+  const removeEmail = (i: number) => {
+    if (recipientEmails.length <= 1) return;
+    setValue("preparer.recipientEmails", recipientEmails.filter((_, j) => j !== i), { shouldValidate: true });
+  };
 
   return (
     <div className="rounded-lg border bg-slate-50 p-6 mb-8">
@@ -136,25 +148,57 @@ export function PreparerBlock() {
           )}
         </div>
 
-        {/* Recipient Email */}
-        <div className="space-y-1">
-          <Label htmlFor="recipient-email">
-            Recipient Email <span className="text-red-500">*</span>
+        {/* Recipient Email(s) */}
+        <div className="space-y-1 sm:col-span-2">
+          <Label className="inline-flex items-center">
+            Recipient Email{recipientEmails.length > 1 ? "s" : ""} <span className="text-red-500 ml-0.5">*</span>
           </Label>
-          <Input
-            id="recipient-email"
-            type="email"
-            placeholder={DEFAULT_RECIPIENT_EMAIL}
-            {...register("preparer.recipientEmail")}
-            aria-invalid={!!errors.preparer?.recipientEmail}
-            className={errors.preparer?.recipientEmail ? "border-red-500 focus-visible:ring-red-500" : ""}
-          />
+          <div className="space-y-2">
+            {recipientEmails.map((_, i) => {
+              const key = `preparer.recipientEmails.${i}` as const;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const fieldReg = register(key as any);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const itemErr = (errors.preparer as any)?.recipientEmails?.[i];
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="email"
+                      placeholder={i === 0 ? DEFAULT_RECIPIENT_EMAIL : "email@example.com"}
+                      aria-invalid={!!itemErr}
+                      className={`flex-1 ${itemErr ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                      {...fieldReg}
+                    />
+                    {recipientEmails.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeEmail(i)}
+                        className="shrink-0 text-slate-400 hover:text-red-500 focus:outline-none"
+                        aria-label="Remove email"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {itemErr && (
+                    <p className="text-xs text-red-500">{itemErr.message ?? "Invalid email"}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={addEmail}
+            className="inline-flex items-center text-xs text-slate-500 hover:text-slate-700 focus:outline-none mt-1"
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            Add another email
+          </button>
           <p className="text-xs text-slate-500">
-            Default: {DEFAULT_RECIPIENT_EMAIL} — change only if needed
+            Checklist will be sent to all addresses above
           </p>
-          {errors.preparer?.recipientEmail && (
-            <p className="text-xs text-red-500">{errors.preparer.recipientEmail.message}</p>
-          )}
         </div>
       </div>
     </div>

@@ -10,12 +10,12 @@ describe("hashPayload", () => {
 
   it("produces identical hashes for nested objects with reordered keys", () => {
     const a = {
-      preparer: { name: "A", recipientEmail: "x@y.z", engagementName: "E" },
+      preparer: { name: "A", recipientEmails: ["x@y.z"], engagementName: "E" },
       answers: { q1: { value: "yes" }, q2: { value: "no", note: "n" } },
     };
     const b = {
       answers: { q2: { note: "n", value: "no" }, q1: { value: "yes" } },
-      preparer: { engagementName: "E", recipientEmail: "x@y.z", name: "A" },
+      preparer: { engagementName: "E", recipientEmails: ["x@y.z"], name: "A" },
     };
     expect(hashPayload(a)).toBe(hashPayload(b));
   });

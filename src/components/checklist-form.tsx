@@ -44,7 +44,7 @@ function buildDefaultValues(): SubmissionInput {
       valuationDate: new Date(),
       reviewerName: "",
       engagementName: "",
-      recipientEmail: DEFAULT_RECIPIENT_EMAIL,
+      recipientEmails: [DEFAULT_RECIPIENT_EMAIL],
     },
     gates: {
       g1Oral: null,
@@ -84,7 +84,7 @@ export function ChecklistForm() {
         setReviewOpen(false);
         setSuccessEngagement(data.preparer.engagementName);
         setSubmitted(true);
-        toast.success(`Checklist sent to ${result.recipientEmail}`);
+        toast.success(`Checklist sent to ${result.recipientEmails.join(", ")}`);
       } else {
         setErrorMessage(result.error);
       }

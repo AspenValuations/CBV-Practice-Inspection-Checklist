@@ -9,7 +9,7 @@ const basePreparer: PrepareInfo = {
   name: "Alice",
   reviewerName: "Bob",
   engagementName: "Acme Corp",
-  recipientEmail: "rcpt@example.com",
+  recipientEmails: ["rcpt@example.com"],
   completionDate: new Date("2026-05-10"),
   valuationDate: new Date("2026-04-30"),
 };

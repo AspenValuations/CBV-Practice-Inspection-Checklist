@@ -35,7 +35,7 @@ export function getTransporter(): Transporter {
 }
 
 export interface SendArgs {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   text: string;
