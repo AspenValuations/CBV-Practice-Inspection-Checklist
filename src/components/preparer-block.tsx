@@ -38,13 +38,13 @@ export function PreparerBlock() {
   return (
     <div className="rounded-lg border bg-slate-50 p-6 mb-8">
       <h2 className="text-base font-semibold text-slate-900 mb-4 uppercase tracking-wide">
-        Preparer of Report
+        Basic Information
       </h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Preparer's Name */}
         <div className="space-y-1">
           <Label htmlFor="preparer-name" className="inline-flex items-center">
-            Preparer&apos;s Name <span className="text-red-500 ml-0.5">*</span>
+            Preparer of Report <span className="text-red-500 ml-0.5">*</span>
             <InfoTooltip text="Analyst who prepared the valuation file (i.e. Schedules and Report)." />
           </Label>
           <Input
