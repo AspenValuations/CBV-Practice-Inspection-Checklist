@@ -1,6 +1,6 @@
 import React from "react";
 import { COLORS, FONT_STACK } from "./primitives";
-import { format } from "date-fns";
+import { formatReportLongDate, formatReportTime } from "@/lib/report-time";
 
 interface HeaderProps {
   reviewerName: string;
@@ -8,8 +8,8 @@ interface HeaderProps {
 }
 
 export function Header({ reviewerName, submittedAt }: HeaderProps) {
-  const dateStr = format(submittedAt, "MMMM d, yyyy");
-  const timeStr = format(submittedAt, "h:mm a");
+  const dateStr = formatReportLongDate(submittedAt);
+  const timeStr = formatReportTime(submittedAt);
 
   return (
     <table width={640} cellPadding={0} cellSpacing={0} role="presentation"

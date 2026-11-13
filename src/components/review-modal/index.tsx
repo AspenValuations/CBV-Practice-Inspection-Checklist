@@ -15,6 +15,7 @@ import { StatusBanner } from "./status-banner";
 import { FlaggedList } from "./flagged-list";
 import type { SubmissionInput } from "@/lib/checklist/schema";
 import type { Gates } from "@/lib/checklist/types";
+import { formatReportIsoDate } from "@/lib/report-time";
 
 interface ReviewModalProps {
   open: boolean;
@@ -59,7 +60,7 @@ export function ReviewModal({ open, onOpenChange, onConfirmSubmit, isSubmitting,
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
         .slice(0, 50) || "checklist";
-      const date = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+      const date = formatReportIsoDate(new Date()); // YYYY-MM-DD Mountain Time
       a.download = `cbv-checklist-${slug}-${date}.pdf`;
       document.body.appendChild(a);
       a.click();

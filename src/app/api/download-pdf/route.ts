@@ -7,6 +7,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import type { DocumentProps } from "@react-pdf/renderer";
 import { ChecklistPdf } from "@/server/pdf/checklist-pdf";
 import type { Gates, PrepareInfo } from "@/lib/checklist/types";
+import { formatReportIsoDate } from "@/lib/report-time";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
       .replace(/^-|-$/g, "")
       .slice(0, 50) || "checklist";
 
-  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+  const date = formatReportIsoDate(new Date()); // YYYY-MM-DD Mountain Time
 
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,

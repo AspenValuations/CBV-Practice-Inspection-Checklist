@@ -1,14 +1,14 @@
 import React from "react";
 import { COLORS, FONT_STACK } from "./primitives";
-import { format } from "date-fns";
+import { formatReportLongDate, formatReportTime } from "@/lib/report-time";
 
 interface FooterProps {
   submittedAt: Date;
 }
 
 export function Footer({ submittedAt }: FooterProps) {
-  const dateStr = format(submittedAt, "MMMM d, yyyy");
-  const timeStr = format(submittedAt, "h:mm a");
+  const dateStr = formatReportLongDate(submittedAt);
+  const timeStr = formatReportTime(submittedAt);
 
   return (
     <table width="100%" cellPadding={0} cellSpacing={0} role="presentation"

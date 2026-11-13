@@ -1,6 +1,6 @@
 import React from "react";
 import { COLORS, FONT_STACK } from "./primitives";
-import { format } from "date-fns";
+import { formatReportIsoDate } from "@/lib/report-time";
 import type { PrepareInfo, Gates, ConclusionType } from "@/lib/checklist/types";
 
 const CONCLUSION_LABELS: Record<ConclusionType, string> = {
@@ -55,8 +55,8 @@ export function EngagementGrid({ preparer, gates }: EngagementGridProps) {
         <GridCell label="Engagement" value={preparer.engagementName} />
       </tr>
       <tr>
-        <GridCell label="Completion Date" value={format(preparer.completionDate, "yyyy-MM-dd")} />
-        <GridCell label="Valuation Date" value={format(preparer.valuationDate, "yyyy-MM-dd")} />
+        <GridCell label="Completion Date" value={formatReportIsoDate(preparer.completionDate)} />
+        <GridCell label="Valuation Date" value={formatReportIsoDate(preparer.valuationDate)} />
         <td width="33%" style={{ width: "33%", padding: "8px 12px", verticalAlign: "top" }}>
           <p style={{ margin: 0, fontFamily: FONT_STACK, fontSize: 9, fontWeight: 700,
             color: COLORS.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>

@@ -6,6 +6,7 @@ import { tallyAll } from "@/lib/checklist/tally";
 import { buildFlaggedItems } from "@/lib/checklist/flags";
 import { computeInactiveSet } from "@/lib/checklist/gates";
 import type { PrepareInfo, Gates } from "@/lib/checklist/types";
+import { formatReportIsoDate, formatReportTime, REPORT_TIME_ZONE_LABEL } from "@/lib/report-time";
 
 const DG = "#1A322F";
 const RED = "#dc2626";
@@ -112,11 +113,13 @@ export interface ChecklistPdfProps {
 
 function fmtDate(d: unknown): string {
   if (!d) return "—";
-  try {
-    return new Date(d as string).toLocaleDateString("en-CA");
-  } catch {
-    return "—";
-  }
+  const date = new Date(d as string);
+  if (Number.isNaN(date.getTime())) return "—";
+  return formatReportIsoDate(date);
+}
+
+function fmtDateTime(d: Date): string {
+  return `${formatReportIsoDate(d)} ${formatReportTime(d)} ${REPORT_TIME_ZONE_LABEL}`;
 }
 
 function qAnsStyle(value: string | undefined, excluded: boolean) {
@@ -183,7 +186,7 @@ export function ChecklistPdf({ preparer, gates, answers, generatedAt }: Checklis
           </View>
           <View style={s.infoCell}>
             <Text style={s.infoLbl}>Generated:</Text>
-            <Text style={s.infoVal}>{fmtDate(generatedAt)}</Text>
+            <Text style={s.infoVal}>{fmtDateTime(generatedAt)}</Text>
           </View>
         </View>
 
